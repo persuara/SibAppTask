@@ -1,5 +1,4 @@
 
-https://github.com/user-attachments/assets/aa9ab621-7c3a-40d5-800e-9bbd2a243570
 # PocketWords – SibApp iOS Task
 
 **PocketWords** is a single-screen iOS vocabulary learning app built with SwiftUI and SwiftData. It allows users to create flashcards, look up meanings, receive instant feedback, and track XP-based progress. All data is stored locally, with no networking or AI components.
