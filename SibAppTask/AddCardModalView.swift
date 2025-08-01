@@ -42,6 +42,9 @@ public struct AddCardModalView: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    @State private var animateForm: Bool = false
+    @State private var animateHStack: Bool = false
+    @State private var animateButton: Bool = false
     @State private var word: String = ""
     @State private var meaning: String = ""
 
@@ -66,6 +69,7 @@ public struct AddCardModalView: View {
                     .padding(UI.closeIconTapPadding)
                     .onTapGesture { dismiss() }
             }
+            .blurSlider(animateHStack)
             
             Form {
                 TextField(Localizations.word.rawValue, text: $word)
@@ -75,6 +79,7 @@ public struct AddCardModalView: View {
                     .accessibilityLabel("Word field")
                     .accessibilityHint("Add your word here")
                     .accessibilityIdentifier("WordField")
+                    
 
                 TextField(Localizations.meaning.rawValue, text: $meaning)
                     .textInputAutocapitalization(.never)
@@ -86,6 +91,7 @@ public struct AddCardModalView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: UI.formCornerRadius, style: .continuous))
             .padding(.horizontal, UI.formHorizontalPadding)
+            .blurSlider(animateForm)
 
             Button {
                 let trimmedWord = word.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -106,10 +112,36 @@ public struct AddCardModalView: View {
             .accessibilityIdentifier("Save")
             .accessibilityLabel("Save")
             .accessibilityHint("Attempts to save the input data")
+            .blurSlider(animateButton)
 
             Spacer()
         }
         .background(Color(.systemGroupedBackground))
+        .task {
+            guard !animateForm else { return }
+            
+            
+            await performDelayed(0.1) {
+                animateHStack = true
+            }
+            
+            await performDelayed(0.1) {
+                animateForm = true
+                animateButton = true
+            }
+        }
+    }
+    
+    private func performDelayed(_ delay: TimeInterval, animation: @escaping () -> ()) async {
+        try? await Task.sleep(for: .seconds(delay))
+        
+        withAnimation(.smooth) {
+            animation()
+        }
     }
 }
 
+
+#Preview {
+    AddCardModalView(onSave: { _, _ in})
+}

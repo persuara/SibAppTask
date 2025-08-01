@@ -37,9 +37,6 @@ struct FlippableView<Front: View, Back: View>: View {
                 .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity)
-        .compositingGroup()
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

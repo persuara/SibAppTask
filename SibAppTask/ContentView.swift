@@ -18,6 +18,8 @@ struct ContentView: View {
     @State private var showingAdd = false
     @State private var userInput: String = ""
     @State private var isFlipped: Bool = false
+    @State private var animateProgressView: Bool = false
+    @State private var animateCards: Bool = false
     
     private struct UI {
         static let padding: CGFloat = 24.0
@@ -40,71 +42,110 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: UI.vSpacing) {
-                ProgressView("Xp: \(vm.xp)", value: CGFloat(vm.xp), total: CGFloat(vm.totalCount))
-                    .progressViewStyle(LinearProgressViewStyle())
-                    .padding(.all, UI.padding / 2.0)
-                    .background(
-                        RoundedRectangle(cornerRadius: UI.padding / 2.0, style: .continuous)
-                            .fill(Color(.tertiarySystemBackground))
-                    )
-                    .padding(.all, UI.padding)
-                ZStack() {
-                    ForEach(vm.cards.indices, id: \.self) { index in
-                        let item = vm.cards[index]
-                        let depth = vm.cards.count - 1 - index
-                        let visibleDepth = min(depth, UI.maxOffsetViews)
-                        let isLast = index == (vm.cards.count - 1)
-                        
-                        WordFlipView(
-                            isFlipped: isLast ? $isFlipped : .constant(false),
-                            model: item,
-                            tag: index,
-                            onReturn: { model, input in
-                                vm.dispatch(.compare(model, input: input))
-                            },
-                            onDelete: { model in
-                                vm.dispatch(.delete(model))
-                            }
+                ScrollView {
+                    ProgressView("Xp: \(vm.xp)", value: CGFloat(vm.xp), total: CGFloat(vm.totalCount))
+                        .progressViewStyle(LinearProgressViewStyle())
+                        .padding(.all, UI.padding / 2.0)
+                        .background(
+                            RoundedRectangle(cornerRadius: UI.padding / 2.0, style: .continuous)
+                                .fill(Color(.tertiarySystemBackground))
                         )
-                        .frame(height: 400.0, alignment: .center)
-                        .offset(y: CGFloat(visibleDepth) * UI.offsetYPerLayer)
-                        .animation(.spring(.smooth, blendDuration: 0.3), value: vm.cards)
-                        .zIndex(Double(index))
+                        .blurSlider(animateProgressView)
+                        .padding(.all, UI.padding)
+                        .animation(.smooth, value: CGFloat(vm.xp) / CGFloat(vm.totalCount))
+                        
+                    ZStack() {
+                        ForEach(vm.cards.indices, id: \.self) { index in
+                            let item = vm.cards[index]
+                            let depth = vm.cards.count - 1 - index
+                            let visibleDepth = min(depth, UI.maxOffsetViews)
+                            let isLast = index == (vm.cards.count - 1)
+                            
+                            WordFlipView(
+                                isFlipped: isLast ? $isFlipped : .constant(false),
+                                model: item,
+                                tag: index,
+                                onReturn: { model, input in
+                                    vm.dispatch(.compare(model, input: input))
+                                },
+                                onDelete: { model in
+                                    vm.dispatch(.delete(model))
+                                }
+                            )
+                            .frame(height: 400.0, alignment: .center)
+                            .offset(y: CGFloat(visibleDepth) * UI.offsetYPerLayer)
+                            .padding(.horizontal, CGFloat(visibleDepth) * UI.padding)
+                            .animation(.spring(.smooth, blendDuration: 0.3), value: vm.cards)
+                            .zIndex(Double(index))
+                            
+                            Spacer()
+                        }
+                        .blurSlider(animateCards)
+                        .onTapGesture {
+                            withAnimation(.easeInOut) {
+                                isFlipped.toggle()
+                            }
+                        }
+                        .padding(.horizontal, UI.padding)
+                        .accessibilityLabel(isFlipped ? "Meaning" : "Word")
+                        .accessibilityHint("Double tap to flip the card")
                         Spacer()
                     }
-                    .onTapGesture {
-                        withAnimation(.easeInOut) {
-                            isFlipped.toggle()
+                }
+                .background(
+                    Color(.systemGroupedBackground)
+                )
+                .navigationTitle(Localizations.pocketWords.rawValue)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showingAdd = true
+                        } label: {
+                            Image(systemName: "plus")
                         }
+                        .accessibilityLabel("Add new card")
+                        .accessibilityIdentifier("AddNewCard")
                     }
-                    .padding(.horizontal, UI.padding)
-                    .accessibilityLabel(isFlipped ? "Meaning" : "Word")
-                    .accessibilityHint("Double tap to flip the card")
-                    Spacer()
                 }
-            }
-            .background(
-                Color(.systemGroupedBackground)
-            )
-            .navigationTitle(Localizations.pocketWords.rawValue)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingAdd = true
-                    } label: {
-                        Image(systemName: "plus")
+                .sheet(isPresented: $showingAdd) {
+                    AddCardModalView { word, meaning in
+                        vm.dispatch(.save(word, meaning: meaning))
                     }
-                    .accessibilityLabel("Add new card")
-                    .accessibilityIdentifier("AddNewCard")
+                    .presentationDetents([.fraction(0.4)])
                 }
-            }
-            .sheet(isPresented: $showingAdd) {
-                AddCardModalView { word, meaning in
-                    vm.dispatch(.save(word, meaning: meaning))
+                .task {
+                    guard !animateProgressView else { return }
+                    
+                    await performDelayed(0.1) {
+                        animateProgressView = true
+                    }
+                    
+                    await performDelayed(0.1) {
+                        animateCards = true
+                    }
                 }
-                .presentationDetents([.fraction(0.4)])
             }
         }
+    }
+    
+    private func performDelayed(_ delay: TimeInterval, animation: @escaping () -> ()) async {
+        try? await Task.sleep(for: .seconds(delay))
+        
+        withAnimation(.smooth) {
+            animation()
+        }
+    }
+}
+
+extension View {
+    
+    @ViewBuilder
+    func blurSlider(_ visible: Bool, offset: CGFloat = 100.0) -> some View {
+        self
+            .compositingGroup()
+            .blur(radius: visible ? 0.0 : 10.0)
+            .opacity(visible ? 1.0 : 0.0)
+            .offset(y: visible ? 0.0 : 100.0)
     }
 }
 

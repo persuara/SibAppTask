@@ -47,6 +47,7 @@ struct WordFlipView: View {
 
     @State var meaning: String = ""
     @Binding var isFlipped: Bool
+    @State var animate: Bool = false
 
     var model: WordCard
     var tag: Int
@@ -73,7 +74,7 @@ struct WordFlipView: View {
                         .contentShape(Rectangle())
                         .onTapGesture { onDelete(model) }
                 }
-
+                
                 Text(model.word)
                     .font(.title)
                     .multilineTextAlignment(.center)
@@ -93,6 +94,7 @@ struct WordFlipView: View {
                 RoundedRectangle(cornerRadius: UI.padding, style: .continuous)
                     .strokeBorder(.gray, lineWidth: UI.cardStrokeWidth)
             )
+            .blurSlider(animate, offset: 10.0)
         }, back: {
             VStack(spacing: UI.padding) {
                 HStack {
@@ -102,7 +104,6 @@ struct WordFlipView: View {
                         .padding(UI.headerItemPadding)
                     Spacer()
                 }
-
                 Text(model.meaning)
                     .font(.title)
                     .multilineTextAlignment(.center)
@@ -121,6 +122,11 @@ struct WordFlipView: View {
                     .strokeBorder(.gray, lineWidth: UI.cardStrokeWidth)
             )
         }, isFlipped: $isFlipped)
+        .task {
+            await performDelayed(0.35, animation: {
+                animate = true
+            })
+        }
     }
 
     @ViewBuilder
@@ -174,6 +180,14 @@ struct WordFlipView: View {
 
         @unknown default:
             EmptyView()
+        }
+    }
+    
+    private func performDelayed(_ delay: TimeInterval, animation: @escaping () -> ()) async {
+        try? await Task.sleep(for: .seconds(delay))
+        
+        withAnimation(.smooth) {
+            animation()
         }
     }
 }
