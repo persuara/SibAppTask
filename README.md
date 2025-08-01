@@ -26,10 +26,10 @@
   Built with SwiftUI, featuring 3D Y-axis flip animations for flashcards. Key UI components:
   1. `FlippableView` — a generic reusable view that takes front and back content.
   2. `WordFlipView` — the primary flashcard displaying a word and its meaning.
-  3. `AddCardModalView` — a modal form sheet with input fields and a submit button (presentation-ready).
+  3. `AddCardModalView` — a modal form sheet with input fields and a submit button.
 
 - **Accessibility:**  
-  VoiceOver support is included via `accessibilityLabel` and `accessibilityHint` modifiers (optional).
+  VoiceOver support is included via `accessibilityLabel` and `accessibilityHint` modifiers.
 
 
 ## Features
