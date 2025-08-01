@@ -6,18 +6,16 @@
 //
 
 import SwiftUI
+import DataLayer
+import Logic
 import SwiftData
 
 @main
 struct SibAppTaskApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+        
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ContainerFactory.build()
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
@@ -25,7 +23,12 @@ struct SibAppTaskApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(vm:
+                            WordCardViewModel.init(
+                                container: sharedModelContainer,
+                                incrementaionPoint: 10
+                            )
+            )
         }
         .modelContainer(sharedModelContainer)
     }
